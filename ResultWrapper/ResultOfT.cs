@@ -51,10 +51,10 @@ namespace ResultWrapper
         public IResult<U, MessageType> Map<U>(Func<T, U> mapperDelegate)
         {
             IResult<U, MessageType> resultMapper(T val) => ResultFactory(mapperDelegate(Value));
-            return Map(resultMapper);
+            return MapResult(resultMapper);
         }
 
-        public IResult<U, MessageType> Map<U>(Func<T, IResult<U, MessageType>> mapperDelegate)
+        public IResult<U, MessageType> MapResult<U>(Func<T, IResult<U, MessageType>> mapperDelegate)
         {
             var result = IsSuccess() ? mapperDelegate(Value) : ResultFactory(default(U));
             return result.WithMessages(Messages);

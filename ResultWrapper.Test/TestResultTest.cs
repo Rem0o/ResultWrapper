@@ -28,9 +28,8 @@ namespace ResultWrapper.Test
 
             var result = someDictionary
                 .ToTestResult()
-                .WithMessages(GetTestMessages());
-
-            Assert.False(result.IsSuccess());
+                .WithMessages(GetTestMessages())
+                .AssertIsFailure();
         }
 
         [Fact]
@@ -55,9 +54,10 @@ namespace ResultWrapper.Test
 
             string CombinationDelegate(string a, string b) => a + b;
 
-            var combinedResult = resultA.Combine(resultB, CombinationDelegate);
+            var combinedResult = resultA
+                .Combine(resultB, CombinationDelegate)
+                .AssertIsFailure();
 
-            Assert.False(combinedResult.IsSuccess());
             Assert.True(combinedResult.Messages.SequenceEqual(new[] { messageA }));
         }
 
@@ -73,9 +73,10 @@ namespace ResultWrapper.Test
 
             string CombinationDelegate(string a, string b) => a + b;
 
-            var combinedResult = resultA.Combine(resultB, CombinationDelegate);
+            var combinedResult = resultA
+                .Combine(resultB, CombinationDelegate)
+                .AssertIsSuccess();
 
-            Assert.True(combinedResult.IsSuccess());
             Assert.Equal(CombinationDelegate(valueA, valueB), combinedResult.Value);
         }
 
@@ -83,15 +84,16 @@ namespace ResultWrapper.Test
         public void SuccessResult_Map_NewSuccessResult()
         {
             var value = 100;
-            var result = TestResultFactory.From(value);
+            var result = value.ToTestResult();
 
             int Double(int v) => v * 2;
 
             Assert.True(result.IsSuccess());
 
-            var mappedResult = result.Map(Double);
+            var mappedResult = result
+                .Map(Double)
+                .AssertIsSuccess();
 
-            Assert.True(mappedResult.IsSuccess());
             Assert.Equal(Double(value), mappedResult.Value);
         }
 
@@ -100,17 +102,87 @@ namespace ResultWrapper.Test
         {
             var value = 100;
             var message = "Some error";
-            var result = TestResultFactory.From(value)
+            var result = value.ToTestResult()
                 .WithMessages(message);
 
             int Double(int v) => v * 2;
 
             Assert.False(result.IsSuccess());
 
-            var mappedResult = result.Map(Double);
+            var mappedResult = result
+                .Map(Double)
+                .AssertIsFailure();
 
-            Assert.False(mappedResult.IsSuccess());
             Assert.Contains(message, mappedResult.Messages);
+        }
+
+        [Fact]
+        public void SuccessResult_MapSuccesResult_NewSuccessResult()
+        {
+            var value = new[] { 1, 2, 4 };
+            var result = value.ToTestResult();
+
+            var mappedResult = result
+                .MapResult(array => array.Sum()
+                .ToTestResult())
+                .AssertIsSuccess();
+
+            Assert.Equal(value.Sum(), mappedResult.Value);
+        }
+
+        [Fact]
+        public void SuccessResult_MapFailedResult_NewFailedResult()
+        {
+            var value = new[] { 1, 2, 4 };
+            var result = value.ToTestResult();
+
+            var mappedResult = result
+              .MapResult(array => array.Sum()
+              .ToTestResult("With some error"))
+              .AssertIsFailure();
+        }
+
+        [Fact]
+        public void SuccessResult_ValidateReturnsError_NewFailedResult()
+        {
+            var value = "some value";
+            var result = value.ToTestResult();
+
+            var validatedResult = result
+                .Validate(v => "Some error")
+                .AssertIsFailure();
+        }
+
+        [Fact]
+        public void SuccessResult_DoSomething_DidSomething()
+        {
+            bool didSomething = false;
+            void DoSomething()
+            {
+                didSomething = true;
+            }
+
+            "Do something!".ToTestResult()
+                .AssertIsSuccess()
+                .Do(x => DoSomething());
+
+            Assert.True(didSomething);
+        }
+
+        [Fact]
+        public void FailedResult_DoSomething_DidNotDoSomething()
+        {
+            bool didSomething = false;
+            void DoSomething()
+            {
+                didSomething = true;
+            }
+
+            "Do something!".ToTestResult(messages: "DENIED!")
+                .AssertIsFailure()
+                .Do(x => DoSomething());
+
+            Assert.False(didSomething);
         }
 
         private static string[] GetTestMessages()
