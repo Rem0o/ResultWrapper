@@ -67,12 +67,6 @@ namespace ResultWrapper
                 .WithMessages(result.Value);
         }
 
-        public IResult<T, MessageType> Validate(Func<T, MessageType> validationDelegate)
-        {
-            Func<T, IEnumerable<MessageType>> validationDelegateMany = val => new[] { validationDelegate(val) };
-            return Validate(validationDelegateMany);
-        }
-
         public IResult<T, MessageType> Do(Action<T> action)
         {
             if (IsSuccess())

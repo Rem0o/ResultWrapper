@@ -149,8 +149,19 @@ namespace ResultWrapper.Test
             var result = value.ToTestResult();
 
             var validatedResult = result
-                .Validate(v => "Some error")
+                .Validate(v => new[] { "Some error" })
                 .AssertIsFailure();
+        }
+
+        [Fact]
+        public void SuccessResult_ValidateReturnsNoError_NewFailedResult()
+        {
+            var value = "some value";
+            var result = value.ToTestResult();
+
+            var validatedResult = result
+                .Validate(v => new string[] {})
+                .AssertIsSuccess();
         }
 
         [Fact]
