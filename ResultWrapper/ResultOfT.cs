@@ -75,6 +75,22 @@ namespace ResultWrapper
             return this;
         }
 
+        public IResult<T, MessageType> Catch(Func<IEnumerable<MessageType>, T> mapperDelegate)
+        {
+            if (!IsSuccess())
+                return ResultFactory(mapperDelegate(this.Messages));
+
+            return ResultFactory(this.Value).WithMessages(this.Messages);
+        }
+
+        public IResult<T, MessageType> Catch(Func<IEnumerable<MessageType>, IResult<T, MessageType>> mapperDelegate)
+        {
+             if (!IsSuccess())
+                return mapperDelegate(this.Messages);
+
+            return ResultFactory(this.Value).WithMessages(this.Messages);
+        }
+
         public T Value { get; protected set; }
     }
 }

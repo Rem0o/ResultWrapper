@@ -196,6 +196,30 @@ namespace ResultWrapper.Test
             Assert.False(didSomething);
         }
 
+        [Fact]
+        public void FailedResult_Catch_SuccessResult()
+        {
+            var catchedFailedResult = 1.ToTestResult(messages: "Failed!")
+                .AssertIsFailure()
+                .Catch( messages => {
+                    return 2;
+                });
+
+            catchedFailedResult.AssertIsSuccess();
+        }
+
+        [Fact]
+        public void FailedResult_Catch_NewFailedResult()
+        {
+            var catchedFailedResult = 1.ToTestResult(messages: "Failed!")
+                .AssertIsFailure()
+                .Catch( messages => {
+                    return 2.ToTestResult().WithMessages("DENIED");
+                });
+
+            catchedFailedResult.AssertIsFailure();
+        }
+
         private static string[] GetTestMessages()
         {
             return new[] { "Some message", "And some other message" };
