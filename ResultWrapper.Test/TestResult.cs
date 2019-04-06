@@ -8,7 +8,7 @@ namespace ResultWrapper.Test
 
         public override bool IsSuccess() => base.IsSuccess();
 
-        public override IResult<U, string> ResultFactory<U>(U value, IEnumerable<string> messages = null)
+        protected override IResult<U, string> ResultFactory<U>(U value, IEnumerable<string> messages = null)
         {
             return new TestResult<U>(value, messages);
         }

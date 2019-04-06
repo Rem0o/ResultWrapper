@@ -1,4 +1,6 @@
-﻿using Xunit;
+﻿using System;
+using System.Linq;
+using Xunit;
 
 namespace ResultWrapper.Test
 {
@@ -12,10 +14,9 @@ namespace ResultWrapper.Test
         public static TestResult<T> From<T>(IResult<T, string> result, params string[] messages)
         {
             return (result is TestResult<T> TestResult ?
-                   TestResult :
-                   new TestResult<T>(result.Value, result.Messages)
+                   TestResult.Validate(v => messages) :
+                   new TestResult<T>(result.Value, result.Messages.Concat(messages))
                )
-               .WithMessages(messages)
                .ToTestResult();
         }
 
@@ -29,9 +30,10 @@ namespace ResultWrapper.Test
             return From(result, messages);
         }
 
-        public static IResult<T, string> AssertIsSuccess<T>(this IResult<T, string> result)
+        public static IResult<T, string> AssertIsSuccess<T>(this IResult<T, string> result, Func<T, Boolean> testFunc = null )
         {
             Assert.True(result.IsSuccess());
+            Assert.True(testFunc?.Invoke(result.Value) ?? true);
             return result;
         }
 

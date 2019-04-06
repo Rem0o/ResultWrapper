@@ -27,8 +27,7 @@ namespace ResultWrapper.Test
             };
 
             var result = someDictionary
-                .ToTestResult()
-                .WithMessages(GetTestMessages())
+                .ToTestResult(GetTestMessages())
                 .AssertIsFailure();
         }
 
@@ -36,7 +35,7 @@ namespace ResultWrapper.Test
         public void Result_WithMessages_MessagesAdded()
         {
             var messages = GetTestMessages();
-            var result = 1.ToTestResult().WithMessages(messages);
+            var result = 1.ToTestResult(messages);
 
             Assert.True(messages.SequenceEqual(result.Messages));
         }
@@ -45,12 +44,13 @@ namespace ResultWrapper.Test
         public void FailedResults_Combine_CombinedFailingResult()
         {
             var messageA = "Salution";
+            var messageB = "Sir!";
 
-            var valueA = "Hi ";
+            var valueA = "Hi";
             var valueB = "Mark";
 
-            var resultA = valueA.ToTestResult().WithMessages(messageA);
-            var resultB = valueB.ToTestResult();
+            var resultA = valueA.ToTestResult(messageA);
+            var resultB = valueB.ToTestResult(messageB);
 
             string CombinationDelegate(string a, string b) => a + b;
 
@@ -58,7 +58,7 @@ namespace ResultWrapper.Test
                 .Combine(resultB, CombinationDelegate)
                 .AssertIsFailure();
 
-            Assert.True(combinedResult.Messages.SequenceEqual(new[] { messageA }));
+            Assert.True(combinedResult.Messages.SequenceEqual(new[] { messageA, messageB }));
         }
 
 
@@ -102,9 +102,7 @@ namespace ResultWrapper.Test
         {
             var value = 100;
             var message = "Some error";
-            var result = value.ToTestResult()
-                .WithMessages(message);
-
+            var result = value.ToTestResult(message);
             int Double(int v) => v * 2;
 
             Assert.False(result.IsSuccess());
@@ -161,7 +159,7 @@ namespace ResultWrapper.Test
 
             var validatedResult = result
                 .Validate(v => new string[] {})
-                .AssertIsSuccess();
+                .AssertIsSuccess(v => v == value);
         }
 
         [Fact]
@@ -189,7 +187,7 @@ namespace ResultWrapper.Test
                 didSomething = true;
             }
 
-            "Do something!".ToTestResult(messages: "DENIED!")
+            "Do something!".ToTestResult("DENIED!")
                 .AssertIsFailure()
                 .Do(x => DoSomething());
 
@@ -199,7 +197,7 @@ namespace ResultWrapper.Test
         [Fact]
         public void FailedResult_Catch_SuccessResult()
         {
-            var catchedFailedResult = 1.ToTestResult(messages: "Failed!")
+            var catchedFailedResult = 1.ToTestResult("Failed!")
                 .AssertIsFailure()
                 .Catch( messages => {
                     return 2;
@@ -211,10 +209,10 @@ namespace ResultWrapper.Test
         [Fact]
         public void FailedResult_Catch_NewFailedResult()
         {
-            var catchedFailedResult = 1.ToTestResult(messages: "Failed!")
+            var catchedFailedResult = 1.ToTestResult("Failed!")
                 .AssertIsFailure()
                 .Catch( messages => {
-                    return 2.ToTestResult().WithMessages("DENIED");
+                    return 2.ToTestResult("DENIED");
                 });
 
             catchedFailedResult.AssertIsFailure();

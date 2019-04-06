@@ -6,8 +6,6 @@ namespace ResultWrapper
 {
     public interface IResult<T, MessageType> : IResult<MessageType>
     {
-        IResult<T, MessageType> WithMessages(params MessageType[] messages);
-        IResult<T, MessageType> WithMessages(params IEnumerable<MessageType>[] messages);
         IResult<V, MessageType> Combine<U, V>(IResult<U, MessageType> result, Func<T, U, V> combineDelegate);
         IResult<U, MessageType> Map<U>(Func<T, U> mapperDelegate);
         IResult<U, MessageType> MapResult<U>(Func<T, IResult<U, MessageType>> mapperDelegate);

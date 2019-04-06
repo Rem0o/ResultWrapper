@@ -5,7 +5,7 @@ namespace ResultWrapper
 {
     public abstract class Result<MessageType> : IResult<MessageType>
     {
-        public Result(IEnumerable<MessageType> messages = null)
+        protected Result(IEnumerable<MessageType> messages = null)
         {
             if (messages != null)
             {

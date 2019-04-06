@@ -6,16 +6,16 @@ namespace ResultWrapper
 {
     public abstract class Result<T, MessageType> : Result<MessageType>, IResult<T, MessageType>
     {
-        public abstract IResult<U, MessageType> ResultFactory<U>(U value, IEnumerable<MessageType> messages = null);
+        protected abstract IResult<U, MessageType> ResultFactory<U>(U value, IEnumerable<MessageType> messages = null);
 
         public Result(T value, IEnumerable<MessageType> messages = null) : base(messages)
         {
             Value = value;
         }
 
-        public Result(IResult<T, MessageType> value, IEnumerable<MessageType> messages = null) : base(messages.Concat(value.Messages))
+        public Result(IResult<T, MessageType> result, IEnumerable<MessageType> messages = null) : base(messages.Concat(result.Messages))
         {
-            Value = value.Value;
+            Value = result.Value;
         }
 
         public override bool IsSuccess()
@@ -23,29 +23,11 @@ namespace ResultWrapper
             return Value != null && base.IsSuccess();
         }
 
-        public IResult<T, MessageType> WithMessages(params MessageType[] messages)
-        {
-            if (messages != null)
-                _messages.AddRange(messages);
-
-            return this;
-        }
-
-        public IResult<T, MessageType> WithMessages(params IEnumerable<MessageType>[] messages)
-        {
-            if (messages != null)
-                _messages.AddRange(messages.SelectMany(x => x));
-
-            return this;
-        }
-
         public IResult<V, MessageType> Combine<U, V>(IResult<U, MessageType> result, Func<T, U, V> combineDelegate)
         {
-            return IsSuccess() && result.IsSuccess() ?
-                ResultFactory(combineDelegate(Value, result.Value)) :
-                ResultFactory(default(V))
-                    .WithMessages(Messages)
-                    .WithMessages(result.Messages);
+            return result
+                .MapResult<V>( u => this.Map( t => combineDelegate(t, u)))
+                .Catch(m => ResultFactory(default(V), this.Messages.Concat(m)));
         }
 
         public IResult<U, MessageType> Map<U>(Func<T, U> mapperDelegate)
@@ -56,15 +38,13 @@ namespace ResultWrapper
 
         public IResult<U, MessageType> MapResult<U>(Func<T, IResult<U, MessageType>> mapperDelegate)
         {
-            var result = IsSuccess() ? mapperDelegate(Value) : ResultFactory(default(U));
-            return result.WithMessages(Messages);
+            return IsSuccess() ? mapperDelegate(Value) : ResultFactory(default(U), Messages);
         }
 
         public IResult<T, MessageType> Validate(Func<T, IEnumerable<MessageType>> validationDelegate)
         {
-            var result = Map(validationDelegate);
-            return result.Combine(this, (a, b) => b)
-                .WithMessages(result.Value);
+            return Map(validationDelegate)
+                .MapResult( m => ResultFactory(Value, m));
         }
 
         public IResult<T, MessageType> Do(Action<T> action)
@@ -80,7 +60,7 @@ namespace ResultWrapper
             if (!IsSuccess())
                 return ResultFactory(mapperDelegate(this.Messages));
 
-            return ResultFactory(this.Value).WithMessages(this.Messages);
+            return ResultFactory(this.Value, this.Messages);
         }
 
         public IResult<T, MessageType> Catch(Func<IEnumerable<MessageType>, IResult<T, MessageType>> mapperDelegate)
@@ -88,7 +68,7 @@ namespace ResultWrapper
              if (!IsSuccess())
                 return mapperDelegate(this.Messages);
 
-            return ResultFactory(this.Value).WithMessages(this.Messages);
+            return ResultFactory(this.Value, this.Messages);
         }
 
         public T Value { get; protected set; }
