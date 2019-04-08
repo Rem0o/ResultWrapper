@@ -6,6 +6,7 @@ namespace ResultWrapper
     public interface IResult<MessageType>
     {
         bool IsSuccess();
+        bool HasError();
         IEnumerable<MessageType> Messages { get; }
     }
 }

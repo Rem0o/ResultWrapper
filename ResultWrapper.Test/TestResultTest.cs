@@ -135,8 +135,7 @@ namespace ResultWrapper.Test
             var result = value.ToTestResult();
 
             var mappedResult = result
-              .MapResult(array => array.Sum()
-              .ToTestResult("With some error"))
+              .MapResult(array => array.Sum().ToTestResult("With some error"))
               .AssertIsFailure();
         }
 
@@ -163,7 +162,7 @@ namespace ResultWrapper.Test
         }
 
         [Fact]
-        public void SuccessResult_DoSomething_DidSomething()
+        public void SuccessResult_OnSuccess_DidSomething()
         {
             bool didSomething = false;
             void DoSomething()
@@ -173,13 +172,13 @@ namespace ResultWrapper.Test
 
             "Do something!".ToTestResult()
                 .AssertIsSuccess()
-                .Do(x => DoSomething());
+                .OnSuccess(x => DoSomething());
 
             Assert.True(didSomething);
         }
 
         [Fact]
-        public void FailedResult_DoSomething_DidNotDoSomething()
+        public void FailedResult_OnSuccess_DidNotDoSomething()
         {
             bool didSomething = false;
             void DoSomething()
@@ -189,17 +188,17 @@ namespace ResultWrapper.Test
 
             "Do something!".ToTestResult("DENIED!")
                 .AssertIsFailure()
-                .Do(x => DoSomething());
+                .OnSuccess(x => DoSomething());
 
             Assert.False(didSomething);
         }
 
         [Fact]
-        public void FailedResult_Catch_SuccessResult()
+        public void FailedResult_OnError_SuccessResult()
         {
             var catchedFailedResult = 1.ToTestResult("Failed!")
                 .AssertIsFailure()
-                .Catch( messages => {
+                .OnError( messages => {
                     return 2;
                 });
 
@@ -207,11 +206,11 @@ namespace ResultWrapper.Test
         }
 
         [Fact]
-        public void FailedResult_Catch_NewFailedResult()
+        public void FailedResult_OnError_NewFailedResult()
         {
             var catchedFailedResult = 1.ToTestResult("Failed!")
                 .AssertIsFailure()
-                .Catch( messages => {
+                .OnError( messages => {
                     return 2.ToTestResult("DENIED");
                 });
 

@@ -18,6 +18,11 @@ namespace ResultWrapper
             return Messages.Any() == false;
         }
 
+        public bool HasError()
+        {
+            return !IsSuccess();
+        }
+
         protected List<MessageType> _messages = new List<MessageType>();
 
         public IEnumerable<MessageType> Messages => _messages;

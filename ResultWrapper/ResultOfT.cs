@@ -8,12 +8,12 @@ namespace ResultWrapper
     {
         protected abstract IResult<U, MessageType> ResultFactory<U>(U value, IEnumerable<MessageType> messages = null);
 
-        public Result(T value, IEnumerable<MessageType> messages = null) : base(messages)
+        protected Result(T value, IEnumerable<MessageType> messages = null) : base(messages)
         {
             Value = value;
         }
 
-        public Result(IResult<T, MessageType> result, IEnumerable<MessageType> messages = null) : base(messages.Concat(result.Messages))
+        protected Result(IResult<T, MessageType> result, IEnumerable<MessageType> messages = null) : base(messages.Concat(result.Messages))
         {
             Value = result.Value;
         }
@@ -27,7 +27,7 @@ namespace ResultWrapper
         {
             return result
                 .MapResult<V>( u => this.Map( t => combineDelegate(t, u)))
-                .Catch(m => ResultFactory(default(V), this.Messages.Concat(m)));
+                .OnError(m => ResultFactory(default(V), this.Messages.Concat(m)));
         }
 
         public IResult<U, MessageType> Map<U>(Func<T, U> mapperDelegate)
@@ -47,7 +47,7 @@ namespace ResultWrapper
                 .MapResult( m => ResultFactory(Value, m));
         }
 
-        public IResult<T, MessageType> Do(Action<T> action)
+        public IResult<T, MessageType> OnSuccess(Action<T> action)
         {
             if (IsSuccess())
                 action(Value);
@@ -55,7 +55,7 @@ namespace ResultWrapper
             return this;
         }
 
-        public IResult<T, MessageType> Catch(Func<IEnumerable<MessageType>, T> mapperDelegate)
+        public IResult<T, MessageType> OnError(Func<IEnumerable<MessageType>, T> mapperDelegate)
         {
             if (!IsSuccess())
                 return ResultFactory(mapperDelegate(this.Messages));
@@ -63,7 +63,7 @@ namespace ResultWrapper
             return ResultFactory(this.Value, this.Messages);
         }
 
-        public IResult<T, MessageType> Catch(Func<IEnumerable<MessageType>, IResult<T, MessageType>> mapperDelegate)
+        public IResult<T, MessageType> OnError(Func<IEnumerable<MessageType>, IResult<T, MessageType>> mapperDelegate)
         {
              if (!IsSuccess())
                 return mapperDelegate(this.Messages);

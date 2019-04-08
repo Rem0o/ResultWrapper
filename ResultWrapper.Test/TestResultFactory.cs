@@ -39,7 +39,7 @@ namespace ResultWrapper.Test
 
         public static IResult<T, string> AssertIsFailure<T>(this IResult<T, string> result)
         {
-            Assert.False(result.IsSuccess());
+            Assert.True(result.HasError());
             return result;
         }
     }
